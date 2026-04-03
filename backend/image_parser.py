@@ -262,12 +262,20 @@ async def parse_category_images(
                     continue
 
         except json.JSONDecodeError as e:
-            print(f"배치 {batch_start // BATCH_SIZE + 1} JSON 파싱 실패: {str(e)}")
+            batch_num = batch_start // BATCH_SIZE + 1
+            print(f"[배치{batch_num}] JSON 파싱 실패 → 이미지 {batch_start+1}~{batch_start+len(batch)}번 건너뜀: {str(e)}")
             continue
         except Exception as e:
-            print(f"배치 {batch_start // BATCH_SIZE + 1} 파싱 중 오류: {str(e)}")
+            batch_num = batch_start // BATCH_SIZE + 1
+            print(f"[배치{batch_num}] 오류 → 이미지 {batch_start+1}~{batch_start+len(batch)}번 건너뜀: {str(e)}")
             continue
 
+    # 순위 재배정: 배치 처리 시 각 배치 내부에서 1부터 시작하는 문제 수정
+    # → 전체 추출 순서 기준으로 1, 2, 3... 순차 부여
+    for i, product in enumerate(all_products):
+        product.rank = i + 1
+
+    print(f"\n=== 파싱 완료: 총 {len(all_products)}개 상품 추출 ===\n")
     return all_products
 
 
