@@ -58,7 +58,7 @@ export default function Step2Analysis() {
       )
 
       // 분석 완료 후 경쟁사 후보 추출
-      const candidates = extractCompetitors(fullText)
+      const candidates = await api.extractCompetitorCandidates(fullText)
       setCompetitorCandidates(candidates)
     } catch (error) {
       setError(error.message)

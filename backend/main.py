@@ -133,6 +133,33 @@ async def analyze_market(request: MarketAnalysisRequest):
     return StreamingResponse(generate(), media_type="text/event-stream")
 
 
+@app.post("/api/analyze/extract-competitors")
+async def extract_competitor_candidates(request: dict):
+    """
+    시장 분석 텍스트에서 경쟌사 후보 추출
+    POST /api/analyze/extract-competitors
+
+    Body: { "analysis_text": "..." }
+    응답: { "candidates": [{"name": "브랜드명", "reason": "이유"}, ...] }
+
+    [이유] JavaScript 정규식보다 Python 정규식이 안정적.
+           Claude가 **볼드** 처리해서 출력해도 자동으로 제거.
+    """
+    analysis_text = request.get("analysis_text", "")
+    raw = analyzer.extract_competitors_from_analysis(analysis_text)
+
+    # **볼드** 마크다운 기호 제거
+    import re
+    candidates = []
+    for item in raw:
+        name = re.sub(r'\*+', '', item["name"]).strip()
+        reason = re.sub(r'\*+', '', item["reason"]).strip()
+        if name:
+            candidates.append({"name": name, "reason": reason})
+
+    return {"candidates": candidates}
+
+
 @app.post("/api/analyze/competitor")
 async def analyze_competitor(request: CompetitorAnalysisRequest):
     """

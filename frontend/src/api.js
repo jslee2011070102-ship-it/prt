@@ -110,6 +110,21 @@ export const analyzeMarket = async (products, brand_name, category_name, onChunk
 }
 
 /**
+ * 시장 분석 텍스트에서 경쟌사 후보 추출 (백엔드 Python 정규식 사용)
+ * JavaScript 정규식보다 안정적, **볼드** 마크다운도 자동 제거
+ */
+export const extractCompetitorCandidates = async (analysisText) => {
+  const response = await fetch(`${API_BASE}/analyze/extract-competitors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ analysis_text: analysisText }),
+  })
+  if (!response.ok) return []
+  const data = await response.json()
+  return data.candidates || []
+}
+
+/**
  * 경쟌사 분석 (SSE 스트리밍)
  */
 export const analyzeCompetitors = async (competitors, market_summary, brand_name, onChunk) => {
