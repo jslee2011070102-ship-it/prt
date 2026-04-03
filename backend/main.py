@@ -6,6 +6,7 @@ FastAPI 메인 애플리케이션
 """
 
 import os
+import json
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, Form, File
 from fastapi.staticfiles import StaticFiles
@@ -123,7 +124,8 @@ async def analyze_market(request: MarketAnalysisRequest):
                 request.category_name,
                 client
             ):
-                yield f"data: {chunk}\n\n"
+                # JSON 인코딩: 줄바꿈(\n) 등 특수문자가 SSE에서 손실되지 않도록
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
             yield "data: [END]\n\n"
         except Exception as e:
             yield f"data: [ERROR] {str(e)}\n\n"
@@ -154,7 +156,7 @@ async def analyze_competitor(request: CompetitorAnalysisRequest):
                 request.brand_name,
                 client
             ):
-                yield f"data: {chunk}\n\n"
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
             yield "data: [END]\n\n"
         except Exception as e:
             yield f"data: [ERROR] {str(e)}\n\n"
@@ -188,7 +190,7 @@ async def generate_report(request: ReportRequest):
                 request.competitors,
                 request.competitor_analysis
             ):
-                yield f"data: {chunk}\n\n"
+                yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
             yield "data: [END]\n\n"
         except Exception as e:
             yield f"data: [ERROR] {str(e)}\n\n"

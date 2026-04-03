@@ -6,7 +6,7 @@
 - API 요청/응답 모델
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional, List
 from datetime import datetime
 
@@ -31,18 +31,19 @@ class Product(BaseModel):
     form_type: Optional[str] = Field(None, description="상품 형태 (자유 텍스트, 예: '알약', '액상', '용기형')")
     url: Optional[str] = Field(None, description="쿠팡 상품 URL")
 
-    @field_validator("revenue_estimate", mode="before")
-    @classmethod
-    def calculate_revenue_estimate(cls, v, info):
-        """추정 월매출 자동 계산: 판매가 × 판매량 × 2"""
-        if v is not None:
-            return v
-        if info.data.get("price") and info.data.get("sales_estimate"):
+    @model_validator(mode="after")
+    def calculate_revenue_estimate(self):
+        """추정 월매출 자동 계산: 판매가 × 판매량 × 2
+
+        [수정 이유] Pydantic v2에서 field_validator는 해당 필드가 입력에 없으면
+        실행되지 않음. model_validator(mode='after')는 항상 실행됨.
+        """
+        if self.revenue_estimate is None and self.price and self.sales_estimate:
             try:
-                return int(info.data["price"] * info.data["sales_estimate"] * 2)
+                self.revenue_estimate = int(self.price * self.sales_estimate * 2)
             except (TypeError, ValueError):
-                return None
-        return None
+                pass
+        return self
 
 
 class Competitor(BaseModel):
