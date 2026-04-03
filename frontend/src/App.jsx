@@ -57,7 +57,7 @@ export default function App() {
             <h1 className="text-2xl font-bold text-primary-500">Product Research Tool</h1>
             <p className="text-gray-600 text-sm mt-1">쿠팡 카테고리 신제품 기획 자동화</p>
           </div>
-          <span className="text-xs text-gray-400 font-mono mt-1">v0.4</span>
+          <span className="text-xs text-gray-400 font-mono mt-1">v0.5</span>
         </div>
       </header>
 

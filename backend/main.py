@@ -263,6 +263,11 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
 
+    print("=" * 50)
+    print("  PRT 서버 v0.5  (추정매출 fix)")
+    print("  http://localhost:3000")
+    print("=" * 50)
+
     # 포트 3000에서 실행
     uvicorn.run(
         app,
