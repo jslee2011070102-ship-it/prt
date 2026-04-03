@@ -27,7 +27,7 @@ from models import (
 )
 
 # 환경 변수 로드
-load_dotenv()
+load_dotenv(override=True)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 if not ANTHROPIC_API_KEY:
