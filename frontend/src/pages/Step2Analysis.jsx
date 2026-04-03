@@ -70,7 +70,7 @@ export default function Step2Analysis() {
 
   const extractCompetitors = (text) => {
     // "## 6. 경쟁사 후보 추천" 섹션에서 브랜드명 + 이유 추출
-    const match = text.match(/##\s*6[.\.]\s*경쟁사\s*후보\s*추천([\s\S]+?)(?=##|\Z)/)
+    const match = text.match(/##\s*6[.\.]\s*경쟁사\s*후보\s*추천([\s\S]+?)(?=\n##|$)/)
     if (!match) return []
 
     const section = match[1]

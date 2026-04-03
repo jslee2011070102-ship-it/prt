@@ -193,9 +193,9 @@ export default function Step1Collect() {
                 </p>
               </div>
               <div>
-                <p className="text-gray-600">평균 100ml당</p>
+                <p className="text-gray-600">추정매출 집계 상품</p>
                 <p className="text-lg font-bold">
-                  {Math.round(products.reduce((sum, p) => sum + (p.price_per_100ml || 0), 0) / products.length)}원
+                  {products.filter(p => p.revenue_estimate).length}개
                 </p>
               </div>
             </div>

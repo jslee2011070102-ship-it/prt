@@ -8,18 +8,7 @@
 
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
-from enum import Enum
 from datetime import datetime
-
-
-# === Enum 정의 ===
-
-class FormType(str, Enum):
-    """상품 형태 분류"""
-    용기형 = "용기형"
-    리필파우치 = "리필파우치"
-    대용량 = "대용량"
-    기타 = "기타"
 
 
 # === 기본 데이터 모델 ===
@@ -34,26 +23,13 @@ class Product(BaseModel):
     review_count: int = Field(default=0, description="리뷰 수")
     rating: float = Field(default=0.0, description="평점")
     volume_text: Optional[str] = Field(None, description="용량 원본 텍스트 (예: '470ml, 2개')")
-    volume_ml: Optional[float] = Field(None, description="용량 (ml, 계산값)")
-    price_per_100ml: Optional[float] = Field(None, description="100ml당 단가 (자동 계산)")
-    sales_text: Optional[str] = Field(None, description="판매량 원본 (예: '4만명+')")
+    unit_price_label: Optional[str] = Field(None, description="단위당 단가 기준 (예: '100ml당', '1정당', '100g당')")
+    price_per_100ml: Optional[float] = Field(None, description="단위당 단가 (unit_price_label 기준)")
+    sales_text: Optional[str] = Field(None, description="판매량 원본 — '구매했어요' 기준만 (예: '4만명+')")
     sales_estimate: Optional[int] = Field(None, description="판매량 숫자 (예: 40000)")
     revenue_estimate: Optional[int] = Field(None, description="추정 월매출 (가격 × 판매량 × 2)")
-    form_type: Optional[FormType] = Field(None, description="상품 형태")
+    form_type: Optional[str] = Field(None, description="상품 형태 (자유 텍스트, 예: '알약', '액상', '용기형')")
     url: Optional[str] = Field(None, description="쿠팡 상품 URL")
-
-    @field_validator("price_per_100ml", mode="before")
-    @classmethod
-    def calculate_price_per_100ml(cls, v, info):
-        """100ml당 단가 자동 계산"""
-        if v is not None:
-            return v
-        if info.data.get("price") and info.data.get("volume_ml"):
-            try:
-                return round(info.data["price"] / (info.data["volume_ml"] / 100), 2)
-            except (ZeroDivisionError, TypeError):
-                return None
-        return None
 
     @field_validator("revenue_estimate", mode="before")
     @classmethod
@@ -67,9 +43,6 @@ class Product(BaseModel):
             except (TypeError, ValueError):
                 return None
         return None
-
-    class Config:
-        use_enum_values = True
 
 
 class Competitor(BaseModel):

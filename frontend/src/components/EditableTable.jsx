@@ -1,10 +1,8 @@
 import React, { useState } from 'react'
 import useStore from '../store'
 
-const FormTypeOptions = ['용기형', '리필파우치', '대용량', '기타']
-
 export default function EditableTable({ products }) {
-  const { updateProduct, deleteProduct, addNewProduct } = useStore()
+  const { updateProduct, addNewProduct } = useStore()
   const [editingCell, setEditingCell] = useState(null)
 
   const handleCellChange = (rowIdx, field, value) => {
@@ -20,31 +18,11 @@ export default function EditableTable({ products }) {
 
     const updatedProduct = { ...product, [field]: parsedValue }
 
-    // volume_ml이 변경되면 price_per_100ml 재계산
-    if (field === 'volume_ml' && updatedProduct.price) {
-      if (parsedValue && parsedValue > 0) {
-        updatedProduct.price_per_100ml = Math.round(updatedProduct.price / (parsedValue / 100))
-      } else {
-        updatedProduct.price_per_100ml = null
-      }
-    }
-
-    // price가 변경되면 price_per_100ml 재계산
-    if (field === 'price' && updatedProduct.volume_ml) {
-      if (updatedProduct.volume_ml > 0) {
-        updatedProduct.price_per_100ml = Math.round(parsedValue / (updatedProduct.volume_ml / 100))
-      } else {
-        updatedProduct.price_per_100ml = null
-      }
-    }
-
-    // sales_estimate가 변경되면 revenue_estimate 재계산
+    // sales_estimate가 변경되면 revenue_estimate 재계산 (판매량 × 판매가 × 2)
     if (field === 'sales_estimate' && updatedProduct.price) {
-      if (parsedValue) {
-        updatedProduct.revenue_estimate = Math.round(updatedProduct.price * parsedValue * 2)
-      } else {
-        updatedProduct.revenue_estimate = null
-      }
+      updatedProduct.revenue_estimate = parsedValue
+        ? Math.round(updatedProduct.price * parsedValue * 2)
+        : null
     }
 
     // price가 변경되면 revenue_estimate 재계산
@@ -55,44 +33,34 @@ export default function EditableTable({ products }) {
     updateProduct(rowIdx, updatedProduct)
   }
 
-  const renderCell = (rowIdx, field, value) => {
+  const renderCell = (product, rowIdx, field) => {
+    const value = product[field]
     const isEditing = editingCell === `${rowIdx}-${field}`
 
-    // 드롭다운 필드 (form_type)
-    if (field === 'form_type') {
+    // 단위당 단가: 값과 라벨을 함께 표시 (읽기 전용)
+    if (field === 'price_per_100ml') {
+      const label = product.unit_price_label || ''
       return (
-        <select
-          value={value || ''}
-          onChange={(e) => {
-            handleCellChange(rowIdx, field, e.target.value)
-            setEditingCell(null)
-          }}
-          className="w-full px-2 py-1 border border-primary-500 rounded text-sm"
-        >
-          <option value="">선택</option>
-          {FormTypeOptions.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      )
-    }
-
-    // 자동 계산 필드 (읽기 전용)
-    if (['price_per_100ml', 'revenue_estimate'].includes(field)) {
-      return (
-        <div className="px-2 py-1 text-sm bg-gray-50 text-gray-700 rounded">
-          {value ? (field === 'revenue_estimate' ? `${value.toLocaleString()}원` : `${value}원`) : '-'}
+        <div className="px-2 py-1 text-sm bg-gray-50 text-gray-700 rounded whitespace-nowrap">
+          {value ? `${value.toLocaleString()}원${label ? ` (${label})` : ''}` : '-'}
         </div>
       )
     }
 
-    // 일반 입력 필드
+    // 추정매출 (읽기 전용)
+    if (field === 'revenue_estimate') {
+      return (
+        <div className="px-2 py-1 text-sm bg-gray-50 text-gray-700 rounded whitespace-nowrap">
+          {value ? `${value.toLocaleString()}원` : '-'}
+        </div>
+      )
+    }
+
+    // 일반 입력 필드 (form_type도 자유 텍스트 입력)
     if (isEditing) {
       return (
         <input
-          type={['rank', 'price', 'review_count', 'sales_estimate', 'revenue_estimate'].includes(field) ? 'number' : 'text'}
+          type={['rank', 'price', 'review_count', 'sales_estimate'].includes(field) ? 'number' : 'text'}
           value={value || ''}
           onChange={(e) => handleCellChange(rowIdx, field, e.target.value)}
           onBlur={() => setEditingCell(null)}
@@ -111,7 +79,9 @@ export default function EditableTable({ products }) {
         onClick={() => setEditingCell(`${rowIdx}-${field}`)}
         className="px-2 py-1 text-sm cursor-pointer hover:bg-blue-50 rounded"
       >
-        {value ? (typeof value === 'number' ? value.toLocaleString() : value) : '-'}
+        {value !== null && value !== undefined
+          ? (typeof value === 'number' ? value.toLocaleString() : value)
+          : '-'}
       </div>
     )
   }
@@ -122,7 +92,7 @@ export default function EditableTable({ products }) {
     { key: 'brand', label: '브랜드' },
     { key: 'price', label: '판매가' },
     { key: 'volume_text', label: '용량' },
-    { key: 'price_per_100ml', label: '100ml당' },
+    { key: 'price_per_100ml', label: '단위당' },
     { key: 'review_count', label: '리뷰수' },
     { key: 'rating', label: '평점' },
     { key: 'sales_text', label: '판매량' },
@@ -138,7 +108,6 @@ export default function EditableTable({ products }) {
             {columns.map((col) => (
               <th key={col.key}>{col.label}</th>
             ))}
-            <th className="w-20">액션</th>
           </tr>
         </thead>
         <tbody>
@@ -146,23 +115,14 @@ export default function EditableTable({ products }) {
             <tr key={rowIdx}>
               {columns.map((col) => (
                 <td key={`${rowIdx}-${col.key}`} className="min-w-max">
-                  {renderCell(rowIdx, col.key, product[col.key])}
+                  {renderCell(product, rowIdx, col.key)}
                 </td>
               ))}
-              <td>
-                <button
-                  onClick={() => deleteProduct(rowIdx)}
-                  className="text-red-600 hover:text-red-800 font-semibold text-sm"
-                >
-                  삭제
-                </button>
-              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* 행 추가 버튼 */}
       <div className="mt-4 flex gap-2">
         <button onClick={addNewProduct} className="btn-secondary btn-small">
           + 행 추가
