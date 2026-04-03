@@ -18,6 +18,12 @@ from PIL import Image
 from anthropic import Anthropic
 from fastapi import UploadFile
 
+try:
+    import fitz  # pymupdf
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
+
 from models import Product, Competitor
 
 
@@ -105,6 +111,25 @@ BATCH_SIZE = 5
 
 
 # === 유틸리티 함수 ===
+
+def pdf_to_images(pdf_data: bytes) -> List[bytes]:
+    """
+    PDF 바이너리를 페이지별 JPEG 이미지 bytes 리스트로 변환
+    pymupdf(fitz) 사용
+    """
+    if not PYMUPDF_AVAILABLE:
+        raise RuntimeError("pymupdf가 설치되지 않았습니다. pip install pymupdf 실행 후 서버를 재시작하세요.")
+
+    doc = fitz.open(stream=pdf_data, filetype="pdf")
+    images = []
+    for page in doc:
+        # 2배 해상도로 렌더링 (글자 선명도 향상)
+        mat = fitz.Matrix(2.0, 2.0)
+        pix = page.get_pixmap(matrix=mat)
+        images.append(pix.tobytes("jpeg"))
+    doc.close()
+    return images
+
 
 def encode_image_to_base64(image_data: bytes) -> tuple[str, str]:
     """
@@ -312,10 +337,27 @@ async def parse_competitor_images(
     """
     competitor_data = {"name": competitor_name}
 
-    # 모든 이미지를 한 번에 인코딩
-    content = []
+    # 모든 파일(이미지 또는 PDF)을 이미지 bytes 리스트로 변환
+    all_image_bytes: List[bytes] = []
     for file in image_files:
-        image_data = await file.read()
+        file_data = await file.read()
+        filename = (file.filename or "").lower()
+        content_type = (file.content_type or "").lower()
+
+        if "pdf" in content_type or filename.endswith(".pdf"):
+            # PDF → 페이지별 이미지 변환
+            try:
+                pages = pdf_to_images(file_data)
+                all_image_bytes.extend(pages)
+                print(f"  PDF '{file.filename}' → {len(pages)}페이지 변환")
+            except Exception as e:
+                print(f"  PDF 변환 실패 '{file.filename}': {str(e)}")
+        else:
+            all_image_bytes.append(file_data)
+
+    # 이미지 bytes → base64 인코딩
+    content = []
+    for image_data in all_image_bytes:
         try:
             encoded, media_type = encode_image_to_base64(image_data)
             content.append({
@@ -336,7 +378,7 @@ async def parse_competitor_images(
     # 프롬프트 추가
     content.append({
         "type": "text",
-        "text": f"위 {len(image_files)}장의 이미지를 종합해서 분석해줘.\n\n" + PARSE_COMPETITOR_PROMPT
+        "text": f"위 {len(content)}장의 이미지를 종합해서 분석해줘.\n\n" + PARSE_COMPETITOR_PROMPT
     })
 
     try:

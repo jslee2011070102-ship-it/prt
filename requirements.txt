@@ -7,3 +7,4 @@ python-dotenv
 httpx
 pillow
 python-multipart
+pymupdf

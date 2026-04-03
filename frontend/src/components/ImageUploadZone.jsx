@@ -22,13 +22,15 @@ export default function ImageUploadZone({ onFilesSelected, isLoading = false, ma
     e.stopPropagation()
   }
 
+  const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'application/pdf']
+
   const handleDrop = (e) => {
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
 
     const files = Array.from(e.dataTransfer.files).filter((f) =>
-      ['image/png', 'image/jpeg', 'image/webp'].includes(f.type)
+      ALLOWED_TYPES.includes(f.type)
     )
 
     if (files.length + selectedFiles.length > maxFiles) {
@@ -78,15 +80,15 @@ export default function ImageUploadZone({ onFilesSelected, isLoading = false, ma
         onClick={() => !isLoading && fileInputRef.current?.click()}
       >
         <div className="text-4xl mb-3">📸</div>
-        <h3 className="font-bold text-gray-700 mb-1">이미지를 드래그해주세요</h3>
+        <h3 className="font-bold text-gray-700 mb-1">파일을 드래그해주세요</h3>
         <p className="text-sm text-gray-600 mb-3">또는 클릭하여 파일 선택</p>
-        <p className="text-xs text-gray-500">PNG, JPG, WEBP 형식 (최대 {maxFiles}개)</p>
+        <p className="text-xs text-gray-500">PNG, JPG, WEBP, PDF 형식 (최대 {maxFiles}개)</p>
 
         <input
           ref={fileInputRef}
           type="file"
           multiple
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg,image/webp,application/pdf"
           onChange={handleFileInput}
           className="hidden"
           disabled={isLoading}
@@ -103,11 +105,18 @@ export default function ImageUploadZone({ onFilesSelected, isLoading = false, ma
             {selectedFiles.map((file, idx) => (
               <div key={idx} className="relative group">
                 <div className="bg-white rounded-lg border border-gray-300 p-2 aspect-square flex items-center justify-center overflow-hidden">
-                  <img
-                    src={URL.createObjectURL(file)}
-                    alt={`Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  {file.type === 'application/pdf' ? (
+                    <div className="flex flex-col items-center justify-center text-red-500">
+                      <span className="text-4xl">📄</span>
+                      <span className="text-xs mt-1 text-gray-500">PDF</span>
+                    </div>
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <button
                   onClick={() => handleRemoveFile(idx)}
