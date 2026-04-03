@@ -52,9 +52,12 @@ export default function App() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <h1 className="text-2xl font-bold text-primary-500">Product Research Tool</h1>
-          <p className="text-gray-600 text-sm mt-1">쿠팡 카테고리 신제품 기획 자동화</p>
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-primary-500">Product Research Tool</h1>
+            <p className="text-gray-600 text-sm mt-1">쿠팡 카테고리 신제품 기획 자동화</p>
+          </div>
+          <span className="text-xs text-gray-400 font-mono mt-1">v0.3</span>
         </div>
       </header>
 
