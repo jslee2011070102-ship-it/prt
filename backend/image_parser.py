@@ -17,7 +17,7 @@ from PIL import Image
 from anthropic import Anthropic
 from fastapi import UploadFile
 
-from models import Product, Competitor, FormType
+from models import Product, Competitor
 
 
 # === 파싱 프롬프트 (최상단 상수) ===
