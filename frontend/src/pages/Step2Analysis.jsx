@@ -29,9 +29,9 @@ export default function Step2Analysis() {
   }))
 
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [manualName, setManualName] = useState('')
 
   useEffect(() => {
-    // Step2에 처음 진입했을 때 분석이 아직 안 되어있으면 자동으로 분석 시작
     if (!marketAnalysis && products.length > 0) {
       handleStartAnalysis()
     }
@@ -39,7 +39,6 @@ export default function Step2Analysis() {
 
   const handleStartAnalysis = async () => {
     if (isAnalyzing) return
-
     try {
       setIsAnalyzing(true)
       setLoading(true)
@@ -57,7 +56,6 @@ export default function Step2Analysis() {
         }
       )
 
-      // 분석 완료 후 경쟁사 후보 추출
       const candidates = await api.extractCompetitorCandidates(fullText)
       setCompetitorCandidates(candidates)
     } catch (error) {
@@ -68,33 +66,25 @@ export default function Step2Analysis() {
     }
   }
 
-  const extractCompetitors = (text) => {
-    // "## 6. 경쟁사 후보 추천" 섹션에서 브랜드명 + 이유 추출
-    const match = text.match(/##\s*6[.\.]\s*경쟁사\s*후보\s*추천([\s\S]+?)(?=\n##|$)/)
-    if (!match) return []
-
-    const section = match[1]
-    const competitors = []
-    const lines = section.split('\n')
-
-    for (const line of lines) {
-      const lineMatch = line.match(/^-\s+([^:]+?)\s*:\s*(.+?)$/)
-      if (lineMatch) {
-        competitors.push({
-          name: lineMatch[1].trim(),
-          reason: lineMatch[2].trim(),
-        })
-      }
+  const handleAddManual = () => {
+    const name = manualName.trim()
+    if (!name) return
+    if (competitorCandidates.some((c) => c.name === name)) {
+      setManualName('')
+      return
     }
+    setCompetitorCandidates([...competitorCandidates, { name, reason: '수동 추가' }])
+    setManualName('')
+  }
 
-    return competitors
+  const handleRemove = (name) => {
+    setCompetitorCandidates(competitorCandidates.filter((c) => c.name !== name))
   }
 
   const isAnalysisComplete = marketAnalysis.length > 0
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
       <div className="card">
         <h2 className="card-title">Step 2: 시장 분석</h2>
         <p className="text-gray-600 text-sm">
@@ -105,7 +95,6 @@ export default function Step2Analysis() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 좌측: 스트리밍 분석 결과 */}
         <div className="lg:col-span-2">
           <div className="card">
             <h3 className="font-bold text-gray-700 mb-4">분석 결과</h3>
@@ -113,30 +102,65 @@ export default function Step2Analysis() {
           </div>
         </div>
 
-        {/* 우측: 경쟁사 후보 */}
         <div className="card">
-          <h3 className="font-bold text-gray-700 mb-4">경쟁사 후보</h3>
+          <h3 className="font-bold text-gray-700 mb-4">경쟌사 후보</h3>
+
           {competitorCandidates.length > 0 ? (
-            <div className="space-y-3">
-              {competitorCandidates.slice(0, 7).map((competitor, idx) => (
-                <div key={idx} className="p-3 bg-light-bg rounded-lg border border-gray-300">
-                  <p className="font-semibold text-sm text-primary-500">{competitor.name}</p>
-                  <p className="text-xs text-gray-600 mt-1">{competitor.reason}</p>
+            <div className="space-y-2 mb-4">
+              {competitorCandidates.slice(0, 10).map((competitor, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-light-bg rounded-lg border border-gray-300 flex items-start justify-between gap-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-primary-500 truncate">{competitor.name}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">{competitor.reason}</p>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(competitor.name)}
+                    className="text-gray-400 hover:text-red-500 text-xs flex-shrink-0 mt-0.5 px-1"
+                    title="제거"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">분석 중입니다...</p>
+            <p className="text-gray-500 text-sm mb-4">
+              {isAnalyzing ? '분석 중입니다...' : '경쟌사 후보가 없습니다. 직접 추가해주세요.'}
+            </p>
           )}
+
+          <div className="border-t pt-3">
+            <p className="text-xs text-gray-500 mb-2">직접 추가</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddManual()}
+                placeholder="브랜드명 입력 후 Enter"
+                className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-primary-500"
+              />
+              <button
+                onClick={handleAddManual}
+                disabled={!manualName.trim()}
+                className={`px-3 py-2 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
+                  manualName.trim()
+                    ? 'btn-primary'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                추가
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 다음 Step 버튼 */}
       <div className="flex justify-between">
-        <button
-          onClick={() => setCurrentStep(1)}
-          className="btn-secondary"
-        >
+        <button onClick={() => setCurrentStep(1)} className="btn-secondary">
           ← 이전
         </button>
         <button
@@ -148,7 +172,7 @@ export default function Step2Analysis() {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          경쟁사 분석 →
+          경쟌사 분석 →
         </button>
       </div>
     </div>
