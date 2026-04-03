@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import useStore from './store'
 import Step1Collect from './pages/Step1Collect'
 import Step2Analysis from './pages/Step2Analysis'
@@ -26,6 +26,14 @@ export default function App() {
   const error = useStore((state) => state.error)
   const clearError = useStore((state) => state.clearError)
   const [showErrorModal, setShowErrorModal] = useState(false)
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then((r) => r.json())
+      .then((data) => setVersion(data.version))
+      .catch(() => {})
+  }, [])
 
   React.useEffect(() => {
     if (error) {
@@ -57,7 +65,7 @@ export default function App() {
             <h1 className="text-2xl font-bold text-primary-500">Product Research Tool</h1>
             <p className="text-gray-600 text-sm mt-1">쿠팡 카테고리 신제품 기획 자동화</p>
           </div>
-          <span className="text-xs text-gray-400 font-mono mt-1">v0.9</span>
+          <span className="text-xs text-gray-400 font-mono mt-1">{version}</span>
         </div>
       </header>
 

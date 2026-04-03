@@ -27,6 +27,9 @@ from models import (
     ReportRequest,
 )
 
+# 버전 (여기만 수정하면 프론트에도 자동 반영)
+APP_VERSION = "v0.9"
+
 # 환경 변수 로드
 load_dotenv(override=True)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
@@ -61,6 +64,12 @@ app.add_middleware(
 def health_check():
     """헬스 체크"""
     return {"status": "ok"}
+
+
+@app.get("/api/version")
+def get_version():
+    """앱 버전 반환 (프론트에서 자동으로 가져감)"""
+    return {"version": APP_VERSION}
 
 
 @app.post("/api/parse/category-images")
