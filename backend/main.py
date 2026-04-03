@@ -291,7 +291,7 @@ if __name__ == "__main__":
     import uvicorn
 
     print("=" * 50)
-    print("  PRT 서버 v0.6  (추정매출 fix)")
+    print("  PRT 서버 v0.9  (이미지 파싱 정확도 향상)")
     print("  http://localhost:3000")
     print("=" * 50)
 
