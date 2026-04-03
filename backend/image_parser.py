@@ -226,8 +226,25 @@ async def parse_category_images(
                     # unit_price → price_per_100ml 필드명 변환
                     if "unit_price" in product_data:
                         product_data["price_per_100ml"] = product_data.pop("unit_price")
+
+                    # 판매량 숫자 변환
                     if product_data.get("sales_text") and not product_data.get("sales_estimate"):
                         product_data["sales_estimate"] = parse_sales_estimate(product_data["sales_text"])
+
+                    # 추정매출 직접 계산 (model_validator 이중 보장)
+                    price = product_data.get("price")
+                    sales_est = product_data.get("sales_estimate")
+                    if price and sales_est and not product_data.get("revenue_estimate"):
+                        product_data["revenue_estimate"] = int(price * sales_est * 2)
+
+                    # 디버그 로그 (터미널에서 확인 가능)
+                    rank = product_data.get("rank", "?")
+                    name = product_data.get("name", "")[:20]
+                    stxt = product_data.get("sales_text")
+                    sest = product_data.get("sales_estimate")
+                    rev  = product_data.get("revenue_estimate")
+                    print(f"  [상품{rank}] {name} | sales_text={stxt} | sales_estimate={sest} | revenue={rev}")
+
                     all_products.append(Product(**product_data))
                 except Exception as e:
                     print(f"상품 파싱 실패: {str(e)}")
