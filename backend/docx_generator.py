@@ -1,6 +1,6 @@
 """
 DOCX 기획서 자동 생성
-- 5개 섹션: 시장 분석 → 가격대 분포 → 진출 전략 → KPI → USP&인증
+- 8개 섹션: 표지 → Executive Summary → 시장 분석 → 시장 분석 심층 → 신제품 전략 → 경쟌사 분석 → 마케팅 전략 → 매출 목표 & KPI
 - 스타일: #2E75B6 헤더, Pretendard 폰트, 페이지 여백 1인치
 - 스트리밍 지원
 """
@@ -80,6 +80,16 @@ def create_docx_report(
     """
     DOCX 기획서 생성 (스트리밍)
 
+    새로운 구조 (8개 섹션):
+    1. 표지
+    2. Executive Summary
+    3. 시장 분석 (TOP 상품 테이블)
+    4. 시장 분석 심층 (가격/브랜드/기능/공백)
+    5. 신제품 진출 전략
+    6. 경쟌사 분석
+    7. 마케팅 전략
+    8. 매출 목표 & KPI
+
     Args:
         meta: 세션 메타데이터
         products: 상품 배열
@@ -118,30 +128,40 @@ def create_docx_report(
 
     doc.add_page_break()
 
+    # === Executive Summary ===
+    yield "Executive Summary 생성 중..."
+    _add_executive_summary(doc, market_analysis)
+    yield "✅ Executive Summary 완료\n"
+
     # === Section 1: 시장 분석 ===
     yield "섹션 1 생성 중..."
     _add_section_1_market_analysis(doc, products, market_analysis)
     yield "✅ 섹션 1: 시장 분석 완료\n"
 
-    # === Section 2: 가격대 분포 분석 ===
+    # === Section 2: 시장 분석 심층 ===
     yield "섹션 2 생성 중..."
-    _add_section_2_price_distribution(doc, market_analysis)
-    yield "✅ 섹션 2: 가격대 분포 분석 완료\n"
+    _add_section_2_deep_analysis(doc, market_analysis)
+    yield "✅ 섹션 2: 시장 분석 심층 완료\n"
 
     # === Section 3: 신제품 진출 전략 ===
     yield "섹션 3 생성 중..."
     _add_section_3_strategy(doc, market_analysis, meta.brand_name)
     yield "✅ 섹션 3: 신제품 진출 전략 완료\n"
 
-    # === Section 4: 매출 목표 및 KPI ===
+    # === Section 4: 경쟌사 분석 ===
     yield "섹션 4 생성 중..."
-    _add_section_4_kpi(doc, market_analysis)
-    yield "✅ 섹션 4: 매출 목표 및 KPI 완료\n"
+    _add_section_4_competitor(doc, competitor_analysis)
+    yield "✅ 섹션 4: 경쟌사 분석 완료\n"
 
-    # === Section 5: USP 및 예정 인증 ===
+    # === Section 5: 마케팅 전략 ===
     yield "섹션 5 생성 중..."
-    _add_section_5_usp_certification(doc, competitor_analysis)
-    yield "✅ 섹션 5: USP 및 인증 완료\n"
+    _add_section_5_marketing(doc, market_analysis)
+    yield "✅ 섹션 5: 마케팅 전략 완료\n"
+
+    # === Section 6: 매출 목표 및 KPI ===
+    yield "섹션 6 생성 중..."
+    _add_section_6_kpi(doc, market_analysis)
+    yield "✅ 섹션 6: 매출 목표 및 KPI 완료\n"
 
     # 메모리에 저장
     doc_bytes = BytesIO()
@@ -160,6 +180,59 @@ _last_generated_doc = None
 
 
 # === 섹션별 작성 함수 ===
+
+def _add_executive_summary(doc: Document, market_analysis: str) -> None:
+    """Executive Summary: 핵심 발견과 시장 규모 요약"""
+    heading = doc.add_heading("Executive Summary", level=1)
+    _style_heading(heading, size=HEADER1_SIZE)
+
+    # 핵심 발견
+    subheading = doc.add_heading("핵심 발견", level=2)
+    _style_heading(subheading)
+
+    # 섹션 4 (공백 포지션) 및 섹션 5 (신제품 스펙)에서 bullet 추출
+    section_4_text = _extract_section_text(market_analysis, 4)
+    section_5_text = _extract_section_text(market_analysis, 5)
+
+    bullets = []
+    # 섹션 4에서 bullet 추출
+    for line in section_4_text.split('\n'):
+        line = line.strip()
+        if line.startswith('-') or line.startswith('*'):
+            bullets.append(line[1:].strip())
+    # 섹션 5에서 bullet 추출
+    for line in section_5_text.split('\n'):
+        line = line.strip()
+        if line.startswith('-') or line.startswith('*'):
+            bullets.append(line[1:].strip())
+
+    # 최대 5개의 bullet 표시
+    for bullet in bullets[:5]:
+        p = doc.add_paragraph()
+        run = p.add_run(f'• {bullet}')
+        _set_run_font(run, size_pt=BODY_TEXT_SIZE)
+
+    doc.add_paragraph()  # 빈 줄
+
+    # 시장 규모 요약
+    subheading = doc.add_heading("시장 규모 요약", level=2)
+    _style_heading(subheading)
+
+    # 섹션 2 (브랜드 구조)에서 처음 200자 추출
+    section_2_text = _extract_section_text(market_analysis, 2)
+    summary_text = ""
+    for line in section_2_text.split('\n'):
+        line = line.strip()
+        if line and not line.startswith('#') and not line.startswith('|') and not line.startswith('-'):
+            summary_text += line + " "
+            if len(summary_text) >= 200:
+                break
+
+    if summary_text:
+        p = doc.add_paragraph()
+        run = p.add_run(summary_text[:200].strip())
+        _set_run_font(run, size_pt=BODY_TEXT_SIZE)
+
 
 def _add_section_1_market_analysis(
     doc: Document,
@@ -220,20 +293,44 @@ def _add_section_1_market_analysis(
         _set_run_font(run, size_pt=BODY_TEXT_SIZE)
 
 
-def _add_section_2_price_distribution(
+def _add_section_2_deep_analysis(
     doc: Document,
     market_analysis: str
 ) -> None:
-    """Section 2: 가격대 분포 분석"""
+    """Section 2: 시장 분석 심층 (가격/브랜드/기능/공백 포지션)"""
     doc.add_page_break()
-    heading = doc.add_heading("2. 가격대 분포 분석", level=1)
+    heading = doc.add_heading("2. 시장 분석 심층", level=1)
     _style_heading(heading)
 
-    # 분석 결과에서 해당 섹션 추출
-    section_text = _extract_section_text(market_analysis, 2)
+    # 섹션 1: 가격대 분포
+    subheading = doc.add_heading("가격대 분포 분석", level=2)
+    _style_heading(subheading)
+    section_1_text = _extract_section_text(market_analysis, 1)
+    _add_analysis_content(doc, section_1_text)
 
-    # 마크다운 테이블 파싱 및 변환
-    _add_analysis_content(doc, section_text)
+    doc.add_paragraph()  # 빈 줄
+
+    # 섹션 2: 브랜드 구조
+    subheading = doc.add_heading("브랜드 구조 분석", level=2)
+    _style_heading(subheading)
+    section_2_text = _extract_section_text(market_analysis, 2)
+    _add_analysis_content(doc, section_2_text)
+
+    doc.add_paragraph()  # 빈 줄
+
+    # 섹션 3: 기능별 분석
+    subheading = doc.add_heading("향·기능별 분석", level=2)
+    _style_heading(subheading)
+    section_3_text = _extract_section_text(market_analysis, 3)
+    _add_analysis_content(doc, section_3_text)
+
+    doc.add_paragraph()  # 빈 줄
+
+    # 섹션 4: 공백 포지션
+    subheading = doc.add_heading("공백 포지션 식별", level=2)
+    _style_heading(subheading)
+    section_4_text = _extract_section_text(market_analysis, 4)
+    _add_analysis_content(doc, section_4_text)
 
 
 def _add_section_3_strategy(
@@ -251,73 +348,45 @@ def _add_section_3_strategy(
     _add_analysis_content(doc, section_text)
 
 
-def _add_section_4_kpi(
-    doc: Document,
-    market_analysis: str
-) -> None:
-    """Section 4: 매출 목표 및 KPI"""
-    doc.add_page_break()
-    heading = doc.add_heading("4. 매출 목표 및 KPI", level=1)
-    _style_heading(heading)
-
-    # 단계별 매출 목표 테이블 (예시 구조)
-    table = doc.add_table(rows=1, cols=3)
-    table.style = "Light Grid Accent 1"
-
-    header_cells = table.rows[0].cells
-    header_cells[0].text = "단계"
-    header_cells[1].text = "기간"
-    header_cells[2].text = "월 매출 목표"
-
-    for cell in header_cells:
-        _style_header_cell(cell)
-
-    # 샘플 데이터 (실제로는 Claude가 생성)
-    stages = [
-        ("Phase 1 (출시)", "1개월", "500만원"),
-        ("Phase 2 (성장)", "2~4개월", "2,000만원"),
-        ("Phase 3 (확대)", "5~12개월", "5,000만원"),
-    ]
-
-    for stage, period, target in stages:
-        row_cells = table.add_row().cells
-        row_cells[0].text = stage
-        row_cells[1].text = period
-        row_cells[2].text = target
-
-        if stages.index((stage, period, target)) % 2 == 0:
-            for cell in row_cells:
-                _style_data_cell(cell, light_bg=True)
-        else:
-            for cell in row_cells:
-                _style_data_cell(cell)
-
-    doc.add_paragraph()
-    _style_heading(doc.add_heading("핵심 KPI", level=2))
-
-    kpis = [
-        "순위 진입: 카테고리 TOP 20",
-        "리뷰수 목표: 월 500+",
-        "평점 유지: 4.5★ 이상",
-    ]
-
-    for kpi in kpis:
-        p = doc.add_paragraph()
-        run = p.add_run(f'• {kpi}')
-        _set_run_font(run, size_pt=BODY_TEXT_SIZE)
-
-
-def _add_section_5_usp_certification(
+def _add_section_4_competitor(
     doc: Document,
     competitor_analysis: str
 ) -> None:
-    """Section 5: USP 및 예정 인증"""
+    """Section 4: 경쟌사 분석"""
     doc.add_page_break()
-    heading = doc.add_heading("5. USP 및 예정 인증", level=1)
+    heading = doc.add_heading("4. 경쟌사 분석", level=1)
     _style_heading(heading)
 
-    # 전체 분석 내용 추가
+    # 경쟌사 분석 전체 내용 추가
     _add_analysis_content(doc, competitor_analysis)
+
+
+def _add_section_5_marketing(
+    doc: Document,
+    market_analysis: str
+) -> None:
+    """Section 5: 마케팅 전략"""
+    doc.add_page_break()
+    heading = doc.add_heading("5. 마케팅 전략", level=1)
+    _style_heading(heading)
+
+    # Section 8 (마케팅 전략) 추출
+    section_text = _extract_section_text(market_analysis, 8)
+    _add_analysis_content(doc, section_text)
+
+
+def _add_section_6_kpi(
+    doc: Document,
+    market_analysis: str
+) -> None:
+    """Section 6: 매출 목표 및 KPI"""
+    doc.add_page_break()
+    heading = doc.add_heading("6. 매출 목표 & KPI", level=1)
+    _style_heading(heading)
+
+    # Section 7 (매출 목표 시뮬레이션) 추출
+    section_text = _extract_section_text(market_analysis, 7)
+    _add_analysis_content(doc, section_text)
 
 
 # === 스타일 함수 ===
