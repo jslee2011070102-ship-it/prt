@@ -257,10 +257,15 @@ async def download_report(request: ReportRequest):
         doc_bytes = docx_generator.save_docx_to_bytes()
         filename = docx_generator.generate_file_name(request.meta)
 
+        # 한글 파일명: RFC 5987 UTF-8 인코딩
+        from urllib.parse import quote
+        encoded_filename = quote(filename, safe='')
+        disposition = f"attachment; filename*=UTF-8''{encoded_filename}"
+
         return StreamingResponse(
             iter([doc_bytes.getvalue()]),
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": disposition}
         )
     except Exception as e:
         return {"error": str(e)}, 400

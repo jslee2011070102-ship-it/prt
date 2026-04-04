@@ -15,7 +15,7 @@ from datetime import datetime
 
 class Product(BaseModel):
     """쿠팡 카테고리 상품 정보"""
-    rank: int = Field(..., description="순위")
+    rank: Optional[int] = Field(None, description="순위 (구매 N위 배지 없으면 null)")
     name: str = Field(..., description="상품명 전체")
     brand: str = Field(..., description="브랜드명")
     price: int = Field(..., description="판매가 (원)")

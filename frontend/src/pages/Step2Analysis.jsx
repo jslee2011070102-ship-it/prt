@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import useStore from '../store'
 import * as api from '../api'
 import StreamingText from '../components/StreamingText'
+import ProgressBar from '../components/ProgressBar'
 
 export default function Step2Analysis() {
   const {
@@ -87,11 +88,20 @@ export default function Step2Analysis() {
     <div className="space-y-6">
       <div className="card">
         <h2 className="card-title">Step 2: 시장 분석</h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm mb-3">
           {isAnalysisComplete
             ? '분석이 완료되었습니다. 아래에서 결과를 확인할 수 있습니다.'
             : '카테고리 데이터를 분석 중입니다...'}
         </p>
+        {isAnalyzing && (
+          <ProgressBar
+            percent={null}
+            label="시장 분석 중... Claude가 데이터를 처리하고 있습니다"
+          />
+        )}
+        {isAnalysisComplete && !isAnalyzing && (
+          <ProgressBar percent={100} label="분석 완료" />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

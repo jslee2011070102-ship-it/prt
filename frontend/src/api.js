@@ -177,14 +177,18 @@ export const downloadReport = async (reportData) => {
   const link = document.createElement('a')
   link.href = url
 
-  // 파일명 추출 (Content-Disposition 헤더에서)
+  // 파일명 추출 (RFC 5987 UTF-8 인코딩 지원)
   const contentDisposition = response.headers.get('content-disposition')
   let filename = '기획서.docx'
 
   if (contentDisposition) {
-    const match = contentDisposition.match(/filename="(.+?)"/)
-    if (match) {
-      filename = match[1]
+    // RFC 5987: filename*=UTF-8''...
+    const rfc5987 = contentDisposition.match(/filename\*=UTF-8''(.+)/i)
+    if (rfc5987) {
+      filename = decodeURIComponent(rfc5987[1])
+    } else {
+      const plain = contentDisposition.match(/filename="(.+?)"/)
+      if (plain) filename = plain[1]
     }
   }
 

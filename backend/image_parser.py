@@ -355,11 +355,16 @@ async def parse_competitor_images(
         content_type = (file.content_type or "").lower()
 
         if "pdf" in content_type or filename.endswith(".pdf"):
-            # PDF → 페이지별 이미지 변환
+            # PDF → 페이지별 이미지 변환 (최대 10페이지로 제한)
             try:
                 pages = pdf_to_images(file_data)
+                MAX_PAGES = 10
+                if len(pages) > MAX_PAGES:
+                    print(f"  PDF '{file.filename}' → {len(pages)}페이지 중 앞 {MAX_PAGES}페이지만 사용")
+                    pages = pages[:MAX_PAGES]
+                else:
+                    print(f"  PDF '{file.filename}' → {len(pages)}페이지 변환")
                 all_image_bytes.extend(pages)
-                print(f"  PDF '{file.filename}' → {len(pages)}페이지 변환")
             except Exception as e:
                 print(f"  PDF 변환 실패 '{file.filename}': {str(e)}")
         else:
@@ -394,7 +399,7 @@ async def parse_competitor_images(
     try:
         message = client.messages.create(
             model=IMAGE_PARSE_MODEL,
-            max_tokens=1500,
+            max_tokens=4096,
             messages=[{"role": "user", "content": content}],
         )
 

@@ -3,6 +3,7 @@ import useStore from '../store'
 import * as api from '../api'
 import ImageUploadZone from '../components/ImageUploadZone'
 import StreamingText from '../components/StreamingText'
+import ProgressBar from '../components/ProgressBar'
 
 export default function Step3Competitor() {
   const {
@@ -116,11 +117,17 @@ export default function Step3Competitor() {
       {/* 헤더 */}
       <div className="card">
         <h2 className="card-title">Step 3: 경쟁사 분석</h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm mb-3">
           {subStep === 'select' && '벤치마킹할 경쟁사를 선택해주세요.'}
           {subStep === 'upload' && '선택된 경쟁사의 상세페이지 스크린샷을 업로드해주세요.'}
           {subStep === 'analyze' && '경쟁사 분석 결과입니다.'}
         </p>
+        {isAnalyzing && (
+          <ProgressBar percent={null} label="경쟁사 분석 중... Claude가 데이터를 처리하고 있습니다" />
+        )}
+        {subStep === 'analyze' && !isAnalyzing && (
+          <ProgressBar percent={100} label="분석 완료" />
+        )}
       </div>
 
       {/* Sub-step A: 경쟁사 선택 */}
@@ -198,8 +205,8 @@ export default function Step3Competitor() {
           ))}
 
           {uploadProgress && (
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">{uploadProgress}</p>
+            <div className="p-4 bg-blue-50 rounded-lg space-y-2">
+              <ProgressBar percent={null} label={uploadProgress} />
             </div>
           )}
 

@@ -3,6 +3,7 @@ import useStore from '../store'
 import * as api from '../api'
 import ImageUploadZone from '../components/ImageUploadZone'
 import EditableTable from '../components/EditableTable'
+import ProgressBar from '../components/ProgressBar'
 import Papa from 'papaparse'
 
 export default function Step1Collect() {
@@ -141,8 +142,8 @@ export default function Step1Collect() {
         />
 
         {uploadProgress && (
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">{uploadProgress}</p>
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg space-y-2">
+            <ProgressBar percent={null} label={uploadProgress} />
           </div>
         )}
       </div>

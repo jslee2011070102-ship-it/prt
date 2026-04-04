@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import useStore from '../store'
 import * as api from '../api'
 import StreamingText from '../components/StreamingText'
+import ProgressBar from '../components/ProgressBar'
 
 export default function Step4Report() {
   const {
@@ -113,11 +114,17 @@ export default function Step4Report() {
       {/* 헤더 */}
       <div className="card">
         <h2 className="card-title">Step 4: 기획서 생성</h2>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-600 text-sm mb-3">
           {isReportComplete
             ? '기획서 생성이 완료되었습니다. 아래에서 다운로드할 수 있습니다.'
             : '기획서를 생성 중입니다...'}
         </p>
+        {isGenerating && (
+          <ProgressBar percent={null} label="기획서 생성 중... Claude가 내용을 작성하고 있습니다" />
+        )}
+        {isReportComplete && !isGenerating && (
+          <ProgressBar percent={100} label="기획서 생성 완료" />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
