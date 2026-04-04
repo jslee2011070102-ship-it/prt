@@ -145,7 +145,7 @@ async def analyze_market(request: MarketAnalysisRequest):
 @app.post("/api/analyze/extract-competitors")
 async def extract_competitor_candidates(request: dict):
     """
-    시장 분석 텍스트에서 경쟌사 후보 추출
+    시장 분석 텍스트에서 경쟁사 후보 추출
     POST /api/analyze/extract-competitors
 
     Body: { "analysis_text": "..." }

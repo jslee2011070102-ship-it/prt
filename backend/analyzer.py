@@ -197,7 +197,7 @@ def extract_competitors_from_analysis(analysis_text: str) -> List[Dict[str, str]
     """
     competitors = []
 
-    # 섹션 6 찾기 (## 6. 경쟌사/경쟁사 후보 추천 패턴을 유연하게 매칭)
+    # 섹션 6 찾기 (## 6. 경쟁사 후보 추천 패턴을 유연하게 매칭)
     match = re.search(r'##\s*6[^\n]*경[쟁쟌]\s*사[^\n]*(.*?)(?=##\s*\d|\Z)', analysis_text, re.DOTALL)
     if not match:
         return competitors

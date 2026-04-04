@@ -1,7 +1,7 @@
 """
 DOCX 기획서 자동 생성
 - 5개 섹션: 시장 분석 → 가격대 분포 → 진출 전략 → KPI → USP&인증
-- 스타일: #2E75B6 헤더, Arial 폰트, 페이지 여백 1인치
+- 스타일: #2E75B6 헤더, Pretendard 폰트, 페이지 여백 1인치
 - 스트리밍 지원
 """
 
@@ -13,6 +13,8 @@ from typing import List, Generator, Optional, Tuple
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 
 from models import Product, Competitor, SessionMeta
 
@@ -21,10 +23,49 @@ from models import Product, Competitor, SessionMeta
 
 HEADER_COLOR = RGBColor(46, 117, 182)  # #2E75B6
 LIGHT_HEADER_COLOR = RGBColor(235, 243, 251)  # #EBF3FB
-FONT_NAME = "Arial"
+FONT_NAME = "Pretendard"
 HEADER1_SIZE = 16
 HEADER2_SIZE = 14
 BODY_TEXT_SIZE = 11
+
+
+def _set_run_font(run, size_pt: int = None, bold: bool = False, color: RGBColor = None) -> None:
+    """
+    run에 Pretendard 폰트를 ASCII + 동아시아(한글) 슬롯 모두 적용.
+    한국어 docx는 w:eastAsia 슬롯을 별도 지정하지 않으면 기본 폰트로 밀림.
+    """
+    run.font.name = FONT_NAME
+    # 동아시아(한글) 폰트 슬롯 강제 지정
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.find(qn('w:rFonts'))
+    if rFonts is None:
+        rFonts = OxmlElement('w:rFonts')
+        rPr.insert(0, rFonts)
+    rFonts.set(qn('w:ascii'), FONT_NAME)
+    rFonts.set(qn('w:hAnsi'), FONT_NAME)
+    rFonts.set(qn('w:eastAsia'), FONT_NAME)
+    rFonts.set(qn('w:cs'), FONT_NAME)
+    if size_pt:
+        run.font.size = Pt(size_pt)
+    if bold:
+        run.font.bold = bold
+    if color:
+        run.font.color.rgb = color
+
+
+def _set_doc_default_font(doc: Document) -> None:
+    """문서 기본 폰트(Normal 스타일)를 Pretendard로 설정"""
+    normal_style = doc.styles['Normal']
+    normal_style.font.name = FONT_NAME
+    rPr = normal_style.element.get_or_add_rPr()
+    rFonts = rPr.find(qn('w:rFonts'))
+    if rFonts is None:
+        rFonts = OxmlElement('w:rFonts')
+        rPr.insert(0, rFonts)
+    rFonts.set(qn('w:ascii'), FONT_NAME)
+    rFonts.set(qn('w:hAnsi'), FONT_NAME)
+    rFonts.set(qn('w:eastAsia'), FONT_NAME)
+    rFonts.set(qn('w:cs'), FONT_NAME)
 
 
 # === 문서 생성 함수 ===
@@ -52,6 +93,9 @@ def create_docx_report(
     # Document 생성
     doc = Document()
 
+    # 문서 기본 폰트: Pretendard (한글 슬롯 포함)
+    _set_doc_default_font(doc)
+
     # 페이지 설정: 상하좌우 1인치 여백
     sections = doc.sections
     for section in sections:
@@ -63,13 +107,14 @@ def create_docx_report(
     # 제목 페이지
     title = doc.add_paragraph()
     title_run = title.add_run(f"{meta.brand_name} - {meta.category_name} 신제품 기획서")
-    title_run.font.size = Pt(24)
-    title_run.font.bold = True
-    title_run.font.color.rgb = HEADER_COLOR
+    _set_run_font(title_run, size_pt=24, bold=True, color=HEADER_COLOR)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     doc.add_paragraph()  # 빈 줄
-    doc.add_paragraph(f"작성일: {datetime.now().strftime('%Y년 %m월 %d일')}").alignment = WD_ALIGN_PARAGRAPH.CENTER
+    date_para = doc.add_paragraph()
+    date_run = date_para.add_run(f"작성일: {datetime.now().strftime('%Y년 %m월 %d일')}")
+    _set_run_font(date_run, size_pt=11)
+    date_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     doc.add_page_break()
 
@@ -170,7 +215,9 @@ def _add_section_1_market_analysis(
     # 분석 결과에서 핵심 문구 추출
     insights = _extract_insights_from_analysis(market_analysis)
     for insight in insights:
-        doc.add_paragraph(f'• {insight}')
+        p = doc.add_paragraph()
+        run = p.add_run(f'• {insight}')
+        _set_run_font(run, size_pt=BODY_TEXT_SIZE)
 
 
 def _add_section_2_price_distribution(
@@ -255,7 +302,9 @@ def _add_section_4_kpi(
     ]
 
     for kpi in kpis:
-        doc.add_paragraph(f'• {kpi}')
+        p = doc.add_paragraph()
+        run = p.add_run(f'• {kpi}')
+        _set_run_font(run, size_pt=BODY_TEXT_SIZE)
 
 
 def _add_section_5_usp_certification(
@@ -279,47 +328,48 @@ def _style_heading(heading, color: RGBColor = HEADER_COLOR, size: int = None) ->
         run = heading.add_run()
     else:
         run = heading.runs[0]
-    run.font.color.rgb = color
-    if size:
-        run.font.size = Pt(size)
+    _set_run_font(run, size_pt=size, color=color)
 
 
 def _style_header_cell(cell) -> None:
     """테이블 헤더 셀 스타일"""
-    # 배경색: #2E75B6
-    from docx.oxml import OxmlElement
-    from docx.oxml.ns import qn
-
     shading_elm = OxmlElement("w:shd")
     shading_elm.set(qn("w:fill"), "2E75B6")
     cell._element.get_or_add_tcPr().append(shading_elm)
 
-    # 텍스트 포맷
+    # 텍스트 포맷: run이 없을 경우도 처리
     for paragraph in cell.paragraphs:
-        for run in paragraph.runs:
-            run.font.color.rgb = RGBColor(255, 255, 255)  # 흰 글씨
-            run.font.bold = True
-            run.font.name = FONT_NAME
-            run.font.size = Pt(11)
+        if paragraph.runs:
+            for run in paragraph.runs:
+                _set_run_font(run, size_pt=10, bold=True, color=RGBColor(255, 255, 255))
+        else:
+            text = paragraph.text
+            if text:
+                paragraph.clear()
+                run = paragraph.add_run(text)
+                _set_run_font(run, size_pt=10, bold=True, color=RGBColor(255, 255, 255))
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 
 def _style_data_cell(cell, light_bg: bool = False) -> None:
     """테이블 데이터 셀 스타일"""
     if light_bg:
-        # 배경색: #EBF3FB
-        from docx.oxml import OxmlElement
-        from docx.oxml.ns import qn
-
         shading_elm = OxmlElement("w:shd")
         shading_elm.set(qn("w:fill"), "EBF3FB")
         cell._element.get_or_add_tcPr().append(shading_elm)
 
-    # 텍스트 포맷
+    # 텍스트 포맷: cell.text = 로 설정된 run에 폰트 적용
     for paragraph in cell.paragraphs:
-        for run in paragraph.runs:
-            run.font.name = FONT_NAME
-            run.font.size = Pt(11)
+        if paragraph.runs:
+            for run in paragraph.runs:
+                _set_run_font(run, size_pt=10)
+        else:
+            # run이 없으면 단락 텍스트를 run으로 재설정
+            text = paragraph.text
+            if text:
+                paragraph.clear()
+                run = paragraph.add_run(text)
+                _set_run_font(run, size_pt=10)
 
 
 # === 보조 함수 ===
@@ -382,10 +432,14 @@ def _add_analysis_content(doc: Document, content: str) -> None:
                     _style_heading(heading)
                 elif line_stripped.startswith("-") or line_stripped.startswith("*"):
                     # 불릿
-                    doc.add_paragraph(f'• {line_stripped[1:].strip()}')
+                    p = doc.add_paragraph()
+                    run = p.add_run(f'• {line_stripped[1:].strip()}')
+                    _set_run_font(run, size_pt=BODY_TEXT_SIZE)
                 else:
                     # 일반 텍스트
-                    doc.add_paragraph(line_stripped)
+                    p = doc.add_paragraph()
+                    run = p.add_run(line_stripped)
+                    _set_run_font(run, size_pt=BODY_TEXT_SIZE)
 
     # 마지막 테이블 처리
     if in_table and table_lines:
