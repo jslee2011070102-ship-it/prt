@@ -123,11 +123,10 @@ def _add_section_1_market_analysis(
 ) -> None:
     """Section 1: 시장 분석"""
     heading = doc.add_heading("1. 시장 분석", level=1)
-    heading.runs[0].font.color.rgb = HEADER_COLOR
-    heading.runs[0].font.size = Pt(HEADER1_SIZE)
+    _style_heading(heading, size=HEADER1_SIZE)
 
     # TOP 25 테이블
-    doc.add_heading("TOP 25 상품 정보", level=2).runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(doc.add_heading("TOP 25 상품 정보", level=2))
 
     # 테이블 헤더
     table = doc.add_table(rows=1, cols=10)
@@ -166,12 +165,12 @@ def _add_section_1_market_analysis(
     doc.add_paragraph()  # 빈 줄
 
     # 핵심 인사이트 추출
-    doc.add_heading("핵심 인사이트", level=2).runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(doc.add_heading("핵심 인사이트", level=2))
 
     # 분석 결과에서 핵심 문구 추출
     insights = _extract_insights_from_analysis(market_analysis)
     for insight in insights:
-        doc.add_paragraph(insight, style="List Bullet")
+        doc.add_paragraph(f'• {insight}')
 
 
 def _add_section_2_price_distribution(
@@ -181,7 +180,7 @@ def _add_section_2_price_distribution(
     """Section 2: 가격대 분포 분석"""
     doc.add_page_break()
     heading = doc.add_heading("2. 가격대 분포 분석", level=1)
-    heading.runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(heading)
 
     # 분석 결과에서 해당 섹션 추출
     section_text = _extract_section_text(market_analysis, 2)
@@ -198,7 +197,7 @@ def _add_section_3_strategy(
     """Section 3: 신제품 진출 전략"""
     doc.add_page_break()
     heading = doc.add_heading("3. 신제품 진출 전략", level=1)
-    heading.runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(heading)
 
     # Section 5 (신제품 스펙 제안) 추출
     section_text = _extract_section_text(market_analysis, 5)
@@ -212,7 +211,7 @@ def _add_section_4_kpi(
     """Section 4: 매출 목표 및 KPI"""
     doc.add_page_break()
     heading = doc.add_heading("4. 매출 목표 및 KPI", level=1)
-    heading.runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(heading)
 
     # 단계별 매출 목표 테이블 (예시 구조)
     table = doc.add_table(rows=1, cols=3)
@@ -247,7 +246,7 @@ def _add_section_4_kpi(
                 _style_data_cell(cell)
 
     doc.add_paragraph()
-    doc.add_heading("핵심 KPI", level=2).runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(doc.add_heading("핵심 KPI", level=2))
 
     kpis = [
         "순위 진입: 카테고리 TOP 20",
@@ -256,7 +255,7 @@ def _add_section_4_kpi(
     ]
 
     for kpi in kpis:
-        doc.add_paragraph(kpi, style="List Bullet")
+        doc.add_paragraph(f'• {kpi}')
 
 
 def _add_section_5_usp_certification(
@@ -266,13 +265,24 @@ def _add_section_5_usp_certification(
     """Section 5: USP 및 예정 인증"""
     doc.add_page_break()
     heading = doc.add_heading("5. USP 및 예정 인증", level=1)
-    heading.runs[0].font.color.rgb = HEADER_COLOR
+    _style_heading(heading)
 
     # 전체 분석 내용 추가
     _add_analysis_content(doc, competitor_analysis)
 
 
 # === 스타일 함수 ===
+
+def _style_heading(heading, color: RGBColor = HEADER_COLOR, size: int = None) -> None:
+    """heading 단락의 runs[0]을 안전하게 스타일 적용 (runs 없을 때도 처리)"""
+    if not heading.runs:
+        run = heading.add_run()
+    else:
+        run = heading.runs[0]
+    run.font.color.rgb = color
+    if size:
+        run.font.size = Pt(size)
+
 
 def _style_header_cell(cell) -> None:
     """테이블 헤더 셀 스타일"""
@@ -365,14 +375,14 @@ def _add_analysis_content(doc: Document, content: str) -> None:
                 if line_stripped.startswith("###"):
                     # H3
                     heading = doc.add_heading(line_stripped.replace("### ", "").replace("###", ""), level=3)
-                    heading.runs[0].font.color.rgb = HEADER_COLOR
+                    _style_heading(heading)
                 elif line_stripped.startswith("##"):
                     # H2
                     heading = doc.add_heading(line_stripped.replace("## ", "").replace("##", ""), level=2)
-                    heading.runs[0].font.color.rgb = HEADER_COLOR
+                    _style_heading(heading)
                 elif line_stripped.startswith("-") or line_stripped.startswith("*"):
                     # 불릿
-                    doc.add_paragraph(line_stripped[1:].strip(), style="List Bullet")
+                    doc.add_paragraph(f'• {line_stripped[1:].strip()}')
                 else:
                     # 일반 텍스트
                     doc.add_paragraph(line_stripped)

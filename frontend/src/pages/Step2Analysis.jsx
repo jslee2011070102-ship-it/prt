@@ -103,7 +103,7 @@ export default function Step2Analysis() {
         </div>
 
         <div className="card">
-          <h3 className="font-bold text-gray-700 mb-4">경쟌사 후보</h3>
+          <h3 className="font-bold text-gray-700 mb-4">경쟁사 후보</h3>
 
           {competitorCandidates.length > 0 ? (
             <div className="space-y-2 mb-4">
@@ -128,7 +128,7 @@ export default function Step2Analysis() {
             </div>
           ) : (
             <p className="text-gray-500 text-sm mb-4">
-              {isAnalyzing ? '분석 중입니다...' : '경쟌사 후보가 없습니다. 직접 추가해주세요.'}
+              {isAnalyzing ? '분석 중입니다...' : '경쟁사 후보가 없습니다. 직접 추가해주세요.'}
             </p>
           )}
 
@@ -172,7 +172,7 @@ export default function Step2Analysis() {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          경쟌사 분석 →
+          경쟁사 분석 →
         </button>
       </div>
     </div>

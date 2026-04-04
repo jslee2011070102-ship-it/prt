@@ -73,7 +73,7 @@ export const uploadCategoryImages = async (files) => {
 }
 
 /**
- * 경쟌사 이미지 파싱
+ * 경쟁사 이미지 파싱
  */
 export const uploadCompetitorImages = async (competitorName, files) => {
   const formData = new FormData()
@@ -86,7 +86,7 @@ export const uploadCompetitorImages = async (competitorName, files) => {
   })
 
   if (!response.ok) {
-    throw new Error(`경쟌사 이미지 파싱 실패: ${response.statusText}`)
+    throw new Error(`경쟁사 이미지 파싱 실패: ${response.statusText}`)
   }
 
   return response.json()
@@ -110,7 +110,7 @@ export const analyzeMarket = async (products, brand_name, category_name, onChunk
 }
 
 /**
- * 시장 분석 텍스트에서 경쟌사 후보 추출 (백엔드 Python 정규식 사용)
+ * 시장 분석 텍스트에서 경쟁사 후보 추출 (백엔드 Python 정규식 사용)
  * JavaScript 정규식보다 안정적, **볼드** 마크다운도 자동 제거
  */
 export const extractCompetitorCandidates = async (analysisText) => {
@@ -125,7 +125,7 @@ export const extractCompetitorCandidates = async (analysisText) => {
 }
 
 /**
- * 경쟌사 분석 (SSE 스트리밍)
+ * 경쟁사 분석 (SSE 스트리밍)
  */
 export const analyzeCompetitors = async (competitors, market_summary, brand_name, onChunk) => {
   const response = await fetch(`${API_BASE}/analyze/competitor`, {
@@ -135,7 +135,7 @@ export const analyzeCompetitors = async (competitors, market_summary, brand_name
   })
 
   if (!response.ok) {
-    throw new Error(`경쟌사 분석 실패: ${response.statusText}`)
+    throw new Error(`경쟁사 분석 실패: ${response.statusText}`)
   }
 
   await readSSEStream(response, onChunk)
